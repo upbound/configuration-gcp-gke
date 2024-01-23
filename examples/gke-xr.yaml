@@ -6,7 +6,7 @@ spec:
   parameters:
     id: configuration-gcp-gke
     region: us-west2
-    version: "latest"
+    version: latest
     nodes:
       count: 3
       instanceType: n1-standard-4

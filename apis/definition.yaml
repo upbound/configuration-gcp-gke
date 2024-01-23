@@ -44,7 +44,7 @@ spec:
                     version:
                       description: Kubernetes version
                       type: string
-                      default: "latest"
+                      default: latest
                     nodes:
                       type: object
                       description: GKE node configuration parameters.
