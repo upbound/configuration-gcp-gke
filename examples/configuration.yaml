@@ -1,0 +1,6 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: cofiguration-gcp-gke
+spec:
+  package: xpkg.upbound.io/upbound/configuration-gcp-gke:v0.1.0
