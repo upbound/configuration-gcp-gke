@@ -1,0 +1,8 @@
+apiVersion: gcp.platform.upbound.io/v1alpha1
+kind: XNetwork
+metadata:
+  name: configuration-gcp-gke
+spec:
+  parameters:
+    id: configuration-gcp-gke
+    region: us-west2

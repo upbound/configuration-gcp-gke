@@ -10,10 +10,16 @@ spec:
   crossplane:
     version: ">=v1.14.1-0"
   dependsOn:
+    - configuration: xpkg.upbound.io/upbound/configuration-gcp-network
+      # renovate: datasource=github-releases depName=upbound/configuration-gcp-network
+      version: "v0.1.0"
     - provider: xpkg.upbound.io/upbound/provider-gcp-compute
       # renovate: datasource=github-releases depName=upbound/provider-gcp
       version: "v0.41.0"
     - provider: xpkg.upbound.io/upbound/provider-gcp-container
+      # renovate: datasource=github-releases depName=upbound/provider-gcp
+      version: "v0.41.0"
+    - provider: xpkg.upbound.io/upbound/provider-gcp-cloudplatform
       # renovate: datasource=github-releases depName=upbound/provider-gcp
       version: "v0.41.0"
     - provider: xpkg.upbound.io/crossplane-contrib/provider-helm
