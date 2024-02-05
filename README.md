@@ -12,7 +12,7 @@ The core components of a custom API in [Crossplane](https://docs.crossplane.io/v
 
 In this specific configuration, the GCP GKE API contains:
 
-- **an GCP GKE (/apis/definition.yaml) custom resource type.**
+- **a [GCP GKE](/apis/definition.yaml) custom resource type.**
 - **Composition of the GCP GKE resources:** Configured in [/apis/composition.yaml](/apis/composition.yaml), it provisions an GCP GKEand resources in the `upbound-system` namespace.
 
 This repository contains an Composite Resource (XR) file.
@@ -23,9 +23,9 @@ This repository contains an Composite Resource (XR) file.
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
 metadata:
-  name: PACKAGE NAME
+  name: configuration-gcp-network
 spec:
-  package: PACKAGE SPEC
+  package: xpkg.upbound.io/upbound/configuration-gcp-network:v0.1.0
 ```
 
 ## Next steps
