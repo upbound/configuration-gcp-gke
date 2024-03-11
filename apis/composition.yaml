@@ -125,6 +125,7 @@ spec:
               kind: Cluster
               spec:
                 forProvider:
+                  deletionProtection: false
                   enableIntranodeVisibility: true
                   initialNodeCount: 1
                   ipAllocationPolicy:
