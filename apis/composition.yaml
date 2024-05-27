@@ -172,6 +172,9 @@ spec:
               - type: FromCompositeFieldPath
                 fromFieldPath: spec.parameters.version
                 toFieldPath: spec.forProvider.minMasterVersion
+              - fromFieldPath: status.atProvider.project
+                toFieldPath: status.gke.project
+                type: ToCompositeFieldPath
 
           - name: node-pool
             base:
@@ -344,6 +347,6 @@ spec:
                       type: Format
                     type: string
                 type: FromCompositeFieldPath
-              - fromFieldPath: spec.forProvider.project
+              - fromFieldPath: status.gke.project
                 toFieldPath: spec.forProvider.manifest.data.gkeProject
                 type: FromCompositeFieldPath
