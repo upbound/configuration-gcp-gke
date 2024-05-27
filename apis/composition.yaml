@@ -172,6 +172,9 @@ spec:
               - type: FromCompositeFieldPath
                 fromFieldPath: spec.parameters.version
                 toFieldPath: spec.forProvider.minMasterVersion
+              - fromFieldPath: status.atProvider.project
+                toFieldPath: status.gke.project
+                type: ToCompositeFieldPath
 
           - name: node-pool
             base:
@@ -311,3 +314,39 @@ spec:
                       type: Format
             readinessChecks:
               - type: None
+
+          - name: workloadIdentitySettings
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                deletionPolicy: Orphan
+                forProvider:
+                  manifest:
+                    apiVersion: v1
+                    kind: ConfigMap
+                    metadata:
+                      namespace: default
+            patches:
+              - fromFieldPath: spec.parameters.id
+                toFieldPath: spec.providerConfigRef.name
+                type: FromCompositeFieldPath
+              - fromFieldPath: spec.parameters.id
+                toFieldPath: metadata.name
+                transforms:
+                  - string:
+                      fmt: '%s-workload-identity-settings'
+                      type: Format
+                    type: string
+                type: FromCompositeFieldPath
+              - fromFieldPath: spec.parameters.id
+                toFieldPath: spec.forProvider.manifest.metadata.name
+                transforms:
+                  - string:
+                      fmt: '%s-workload-identity-settings'
+                      type: Format
+                    type: string
+                type: FromCompositeFieldPath
+              - fromFieldPath: status.gke.project
+                toFieldPath: spec.forProvider.manifest.data.gkeProject
+                type: FromCompositeFieldPath
