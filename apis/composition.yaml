@@ -175,6 +175,14 @@ spec:
               - fromFieldPath: status.atProvider.project
                 toFieldPath: status.gke.project
                 type: ToCompositeFieldPath
+              - fromFieldPath: status.atProvider.project
+                toFieldPath: spec.forProvider.workloadIdentityConfig.workloadPool
+                type: FromCompositeFieldPath
+                transforms:
+                  - type: string
+                    string:
+                      fmt: '%s.svc.id.goog'
+                      type: Format
 
           - name: node-pool
             base:
