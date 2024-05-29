@@ -176,7 +176,7 @@ spec:
                 toFieldPath: status.gke.project
                 type: ToCompositeFieldPath
               - fromFieldPath: status.gke.project
-                toFieldPath: spec.forProvider.workloadIdentityConfig.workloadPool
+                toFieldPath: spec.forProvider.workloadIdentityConfig[0].workloadPool
                 type: FromCompositeFieldPath
                 transforms:
                   - type: string
