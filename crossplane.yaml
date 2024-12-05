@@ -21,13 +21,13 @@ spec:
       version: "v0.6.0"
     - provider: xpkg.upbound.io/upbound/provider-gcp-compute
       # renovate: datasource=github-releases depName=upbound/provider-gcp
-      version: "v1.10.0"
+      version: "v1.11.0"
     - provider: xpkg.upbound.io/upbound/provider-gcp-container
       # renovate: datasource=github-releases depName=upbound/provider-gcp
-      version: "v1.10.0"
+      version: "v1.11.0"
     - provider: xpkg.upbound.io/upbound/provider-gcp-cloudplatform
       # renovate: datasource=github-releases depName=upbound/provider-gcp
-      version: "v1.10.0"
+      version: "v1.11.0"
     - provider: xpkg.upbound.io/upbound/provider-helm
       # renovate: datasource=github-releases depName=upbound/provider-helm
       version: "v0.20.0"
