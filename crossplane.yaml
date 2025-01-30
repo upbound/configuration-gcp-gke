@@ -18,7 +18,7 @@ spec:
   dependsOn:
     - configuration: xpkg.upbound.io/upbound/configuration-gcp-network
       # renovate: datasource=github-releases depName=upbound/configuration-gcp-network
-      version: "v0.7.0"
+      version: "v0.7.1"
     - provider: xpkg.upbound.io/upbound/provider-gcp-compute
       version: "v1"
     - provider: xpkg.upbound.io/upbound/provider-gcp-container
@@ -31,4 +31,4 @@ spec:
       version: "v0"
     - function: xpkg.upbound.io/crossplane-contrib/function-patch-and-transform
       # renovate: datasource=github-releases depName=crossplane-contrib/function-patch-and-transform
-      version: "v0.8.0"
+      version: "v0.8.1"
