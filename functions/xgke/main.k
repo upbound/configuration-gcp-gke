@@ -171,6 +171,7 @@ _items = [
         metadata = _metadata("providerConfigHelm") | {
             name = params.id
             annotations = {
+                "krm.kcl.dev/composition-resource-name" = "providerConfigHelm"
                 "krm.kcl.dev/ready" = "True"
             }
         }
@@ -198,6 +199,7 @@ _items = [
         metadata = _metadata("providerConfigKubernetes") | {
             name = params.id
             annotations = {
+                "krm.kcl.dev/composition-resource-name" = "providerConfigKubernetes"
                 "krm.kcl.dev/ready" = "True"
             }
         }

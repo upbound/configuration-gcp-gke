@@ -189,6 +189,9 @@ _items = [
                             "crossplane.io/composite" = "configuration-gcp-gke"
                         }
                         name = "configuration-gcp-gke"
+                        annotations = {
+                            "crossplane.io/composition-resource-name" = "providerConfigHelm"
+                        }
                     }
                     spec = {
                         credentials = {
@@ -216,6 +219,9 @@ _items = [
                             "crossplane.io/composite" = "configuration-gcp-gke"
                         }
                         name = "configuration-gcp-gke"
+                        annotations = {
+                            "crossplane.io/composition-resource-name" = "providerConfigKubernetes"
+                        }
                     }
                     spec = {
                         credentials = {
