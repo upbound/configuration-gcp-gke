@@ -258,4 +258,16 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
     }
 ]
 
-items = _base_items + _gke_items
+# Forward connection details from GKE cluster
+_connection_details = {
+    apiVersion: "meta.krm.kcl.dev/v1alpha1"
+    kind: "CompositeConnectionDetails"
+    if "gkecluster" in _ocds:
+        data: {
+            kubeconfig = _ocds["gkecluster"].ConnectionDetails.kubeconfig
+        }
+    else:
+        data: {}
+}
+
+items = _base_items + _gke_items + [_connection_details]
