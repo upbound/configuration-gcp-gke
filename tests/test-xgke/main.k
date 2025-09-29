@@ -22,7 +22,7 @@ _items = [
                             region = "us-west2"
                             version = "latest"
                             nodes = {
-                                count = 3
+                                count = 1
                                 instanceType = "n1-standard-4"
                             }
                             deletionPolicy = "Delete"
@@ -148,13 +148,13 @@ _items = [
                         forProvider = {
                             location = "us-west2"
                             autoscaling = [{
-                                maxNodeCount = 3
-                                minNodeCount = 3
+                                maxNodeCount = 1
+                                minNodeCount = 1
                             }]
                             clusterSelector = {
                                 matchControllerRef = True
                             }
-                            initialNodeCount = 3
+                            initialNodeCount = 1
                             management = [{
                                 autoRepair = True
                                 autoUpgrade = True
@@ -294,6 +294,14 @@ _items = [
                             id: "projects/test-project-123/serviceAccounts/test-sa@test-project-123.iam.gserviceaccount.com"
                             email: "test-sa@test-project-123.iam.gserviceaccount.com"
                         }
+                        conditions = [
+                            {
+                                type: "Ready"
+                                status: "True"
+                                lastTransitionTime: "2024-01-01T00:00:00Z"
+                                reason: "Available"
+                            }
+                        ]
                     }
                 }
                 containerv1beta1.Cluster{

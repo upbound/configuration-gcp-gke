@@ -17,6 +17,10 @@ _service_account_id = _ocds?.serviceaccount?.Resource?.status?.atProvider?.id or
 _service_account_email = _ocds?.serviceaccount?.Resource?.status?.atProvider?.email or ""
 _cluster_project_id = _ocds?.gkecluster?.Resource?.status?.atProvider?.project or ""
 
+# Check if ServiceAccount is ready before using it in cluster configuration
+_serviceAccountReadyCondition = [condition for condition in (_ocds?.serviceaccount?.Resource?.status?.conditions or []) if condition.type == "Ready" and condition.status == "True"]
+_isServiceAccountReady = len(_serviceAccountReadyCondition) > 0
+
 # Extract project ID from service account status
 _project_id = ""
 if _service_account_id:
@@ -47,7 +51,8 @@ _connection_secret_name = lambda suffix: str -> str {
     "{}-{}".format(_uid, suffix)
 }
 
-_items = [
+# Create service account and IAM resources first
+_base_items = [
     cloudplatformv1beta1.ServiceAccount{
         metadata = _metadata("serviceaccount") | {
             annotations = {
@@ -75,6 +80,10 @@ _items = [
             }
         }
     }
+]
+
+# Create GKE cluster and dependent resources only when service account is ready
+_gke_items = [] if not (_service_account_email and _isServiceAccountReady) else [
     cloudplatformv1beta1.ProjectIAMMember{
         metadata = _metadata("projectiammember") | {
             annotations = {
@@ -85,8 +94,8 @@ _items = [
         spec = _defaults | {
             forProvider = {
                 role = "roles/container.admin"
-                **({member = "serviceAccount:{}".format(_service_account_email)} if _service_account_email else {})
-                **({project = _project_id} if _project_id else {})
+                member = "serviceAccount:{}".format(_service_account_email)
+                project = _project_id
             }
         }
     }
@@ -117,10 +126,10 @@ _items = [
                 **({nodeVersion = params.version} if params.version != "latest" else {})
                 **({minMasterVersion = params.version} if params.version != "latest" else {})
                 nodeConfig = [{
-                    **({serviceAccount = _service_account_email} if _service_account_email else {})
+                    serviceAccount = _service_account_email
                 }]
                 workloadIdentityConfig = [{
-                    **({workloadPool = "{}.svc.id.goog".format(_project_id)} if _project_id else {})
+                    workloadPool = "{}.svc.id.goog".format(_project_id)
                 }]
             }
             writeConnectionSecretToRef = {
@@ -162,7 +171,7 @@ _items = [
                         enableIntegrityMonitoring = True
                         enableSecureBoot = True
                     }]
-                    **({serviceAccount = _service_account_email} if _service_account_email else {})
+                    serviceAccount = _service_account_email
                 }]
             }
         }
@@ -249,4 +258,4 @@ _items = [
     }
 ]
 
-items = _items
+items = _base_items + _gke_items
