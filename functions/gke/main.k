@@ -191,7 +191,7 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 secretRef = {
                     key = "kubeconfig"
                     name = _connection_secret_name("gkecluster")
-                    namespace = "upbound-system"
+                    namespace = oxr.metadata.namespace
                 }
                 source = "Secret"
             }
@@ -199,7 +199,7 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 secretRef = {
                     key = "private_key"
                     name = _connection_secret_name("sakey")
-                    namespace = "upbound-system"
+                    namespace = oxr.metadata.namespace
                 }
                 source = "Secret"
                 type = "GoogleApplicationCredentials"
@@ -220,7 +220,7 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 secretRef = {
                     key = "kubeconfig"
                     name = _connection_secret_name("gkecluster")
-                    namespace = "upbound-system"
+                    namespace = oxr.metadata.namespace
                 }
                 source = "Secret"
             }
@@ -228,7 +228,7 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 secretRef = {
                     key = "private_key"
                     name = _connection_secret_name("sakey")
-                    namespace = "upbound-system"
+                    namespace = oxr.metadata.namespace
                 }
                 source = "Secret"
                 type = "GoogleApplicationCredentials"

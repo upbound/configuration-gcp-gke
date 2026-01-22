@@ -203,7 +203,7 @@ _items = [
                             secretRef = {
                                 key = "kubeconfig"
                                 name = "configuration-gcp-gke-gkecluster"
-                                namespace = "upbound-system"
+                                namespace = "default"
                             }
                             source = "Secret"
                         }
@@ -211,7 +211,7 @@ _items = [
                             secretRef = {
                                 key = "private_key"
                                 name = "configuration-gcp-gke-sakey"
-                                namespace = "upbound-system"
+                                namespace = "default"
                             }
                             source = "Secret"
                             type = "GoogleApplicationCredentials"
@@ -234,7 +234,7 @@ _items = [
                             secretRef = {
                                 key = "kubeconfig"
                                 name = "configuration-gcp-gke-gkecluster"
-                                namespace = "upbound-system"
+                                namespace = "default"
                             }
                             source = "Secret"
                         }
@@ -242,7 +242,7 @@ _items = [
                             secretRef = {
                                 key = "private_key"
                                 name = "configuration-gcp-gke-sakey"
-                                namespace = "upbound-system"
+                                namespace = "default"
                             }
                             source = "Secret"
                             type = "GoogleApplicationCredentials"
