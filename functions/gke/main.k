@@ -2,9 +2,8 @@
 import models.io.upbound.gcpm.cloudplatform.v1beta1 as cloudplatformv1beta1
 import models.io.upbound.gcpm.container.v1beta1 as containerv1beta1
 import models.io.upbound.platform.gcp.v1alpha1 as platformgcpv1alpha1
-import models.io.crossplane.helm.v1beta1 as helmv1beta1
-import models.io.crossplane.kubernetes.v1alpha1 as kubernetesv1alpha1
-import models.io.crossplane.kubernetes.v1alpha2 as kubernetesv1alpha2
+import models.io.crossplane.helmm.v1beta1 as helmv1beta1
+import models.io.crossplane.kubernetesm.v1alpha1 as kubernetesv1alpha1
 import models.io.k8s.api.core.v1 as corev1
 import base64
 
@@ -181,6 +180,7 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
     helmv1beta1.ProviderConfig{
         metadata = _metadata("providerConfigHelm") | {
             name = params.id
+            namespace = oxr.metadata.namespace
             annotations = {
                 "krm.kcl.dev/composition-resource-name" = "providerConfigHelm"
                 "krm.kcl.dev/ready" = "True"
@@ -209,6 +209,7 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
     kubernetesv1alpha1.ProviderConfig{
         metadata = _metadata("providerConfigKubernetes") | {
             name = params.id
+            namespace = oxr.metadata.namespace
             annotations = {
                 "krm.kcl.dev/composition-resource-name" = "providerConfigKubernetes"
                 "krm.kcl.dev/ready" = "True"
@@ -234,13 +235,15 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
             }
         }
     }
-    kubernetesv1alpha2.Object{
+    kubernetesv1alpha1.Object{
         metadata = _metadata("workloadIdentitySettings") | {
             name = "{}-workload-identity-settings".format(params.id)
+            namespace = oxr.metadata.namespace
         }
         spec = {
             managementPolicies = ["Create", "Observe", "Update", "LateInitialize"]
             providerConfigRef = {
+                kind = "ProviderConfig"
                 name = params.id
             }
             forProvider = {

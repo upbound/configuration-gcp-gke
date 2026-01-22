@@ -3,9 +3,8 @@ import models.io.upbound.dev.meta.v1alpha1 as metav1alpha1
 import models.io.upbound.gcpm.cloudplatform.v1beta1 as cloudplatformv1beta1
 import models.io.upbound.gcpm.container.v1beta1 as containerv1beta1
 import models.io.upbound.platform.gcp.v1alpha1 as platformgcpv1alpha1
-import models.io.crossplane.helm.v1beta1 as helmv1beta1
-import models.io.crossplane.kubernetes.v1alpha1 as kubernetesv1alpha1
-import models.io.crossplane.kubernetes.v1alpha2 as kubernetesv1alpha2
+import models.io.crossplane.helmm.v1beta1 as helmv1beta1
+import models.io.crossplane.kubernetesm.v1alpha1 as kubernetesv1alpha1
 import models.io.k8s.api.core.v1 as corev1
 
 _items = [
@@ -194,6 +193,7 @@ _items = [
                             "crossplane.io/composite" = "configuration-gcp-gke"
                         }
                         name = "configuration-gcp-gke"
+                        namespace = "default"
                         annotations = {
                             "crossplane.io/composition-resource-name" = "providerConfigHelm"
                         }
@@ -224,6 +224,7 @@ _items = [
                             "crossplane.io/composite" = "configuration-gcp-gke"
                         }
                         name = "configuration-gcp-gke"
+                        namespace = "default"
                         annotations = {
                             "crossplane.io/composition-resource-name" = "providerConfigKubernetes"
                         }
@@ -248,16 +249,18 @@ _items = [
                         }
                     }
                 }
-                kubernetesv1alpha2.Object{
+                kubernetesv1alpha1.Object{
                     metadata = {
                         labels = {
                             "crossplane.io/composite" = "configuration-gcp-gke"
                         }
                         name = "configuration-gcp-gke-workload-identity-settings"
+                        namespace = "default"
                     }
                     spec = {
                         managementPolicies = ["Create", "Observe", "Update", "LateInitialize"]
                         providerConfigRef = {
+                            kind = "ProviderConfig"
                             name = "configuration-gcp-gke"
                         }
                         forProvider = {
