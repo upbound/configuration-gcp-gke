@@ -1,19 +1,19 @@
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
-  name: xgke.gcp.platform.upbound.io
+  name: gke.gcp.platform.upbound.io
   labels:
     provider: gcp
 spec:
   writeConnectionSecretsToNamespace: upbound-system
   compositeTypeRef:
     apiVersion: gcp.platform.upbound.io/v1alpha1
-    kind: XGKE
+    kind: GKE
   mode: Pipeline
   pipeline:
-  - step: xgke
+  - step: gke
     functionRef:
-      name: upbound-configuration-gcp-gkexgke
+      name: upbound-configuration-gcp-gkegke
   - step: crossplane-contrib-function-auto-ready
     functionRef:
       name: crossplane-contrib-function-auto-ready

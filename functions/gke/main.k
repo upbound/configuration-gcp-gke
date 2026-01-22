@@ -1,13 +1,13 @@
 
-import models.io.upbound.gcp.cloudplatform.v1beta1 as cloudplatformv1beta1
-import models.io.upbound.gcp.container.v1beta1 as containerv1beta1
+import models.io.upbound.gcpm.cloudplatform.v1beta1 as cloudplatformv1beta1
+import models.io.upbound.gcpm.container.v1beta1 as containerv1beta1
 import models.io.upbound.platform.gcp.v1alpha1 as platformgcpv1alpha1
-import models.io.crossplane.helm.v1beta1 as helmv1beta1
-import models.io.crossplane.kubernetes.v1alpha1 as kubernetesv1alpha1
-import models.io.crossplane.kubernetes.v1alpha2 as kubernetesv1alpha2
-import regex
+import models.io.crossplane.helmm.v1beta1 as helmv1beta1
+import models.io.crossplane.kubernetesm.v1alpha1 as kubernetesv1alpha1
+import models.io.k8s.api.core.v1 as corev1
+import base64
 
-oxr = platformgcpv1alpha1.XGKE{**option("params").oxr}
+oxr = platformgcpv1alpha1.GKE{**option("params").oxr}
 _ocds = option("params")?.ocds or {}
 params = oxr.spec.parameters
 providerConfigRefName = params.providerConfigName or "default"
@@ -41,9 +41,12 @@ _metadata = lambda name: str -> any {
 }
 
 _defaults = {
-    deletionPolicy = params.deletionPolicy or "Delete"
+    managementPolicies = params.managementPolicies or ["*"]
     if providerConfigRefName:
-        providerConfigRef.name = providerConfigRefName
+        providerConfigRef = {
+            kind = "ProviderConfig"
+            name = providerConfigRefName
+        }
 }
 
 _connection_secret_name = lambda suffix: str -> str {
@@ -76,7 +79,6 @@ _base_items = [
             }
             writeConnectionSecretToRef = {
                 name = _connection_secret_name("sakey")
-                namespace = "upbound-system"
             }
         }
     }
@@ -107,10 +109,10 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 deletionProtection = False
                 enableIntranodeVisibility = True
                 initialNodeCount = 1
-                ipAllocationPolicy = [{
+                ipAllocationPolicy = {
                     clusterSecondaryRangeName = "pods"
                     servicesSecondaryRangeName = "services"
-                }]
+                }
                 loggingService = "logging.googleapis.com/kubernetes"
                 monitoringService = "monitoring.googleapis.com/kubernetes"
                 networkSelector = {
@@ -125,16 +127,15 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 }
                 **({nodeVersion = params.version} if params.version != "latest" else {})
                 **({minMasterVersion = params.version} if params.version != "latest" else {})
-                nodeConfig = [{
+                nodeConfig = {
                     serviceAccount = _service_account_email
-                }]
-                workloadIdentityConfig = [{
+                }
+                workloadIdentityConfig = {
                     workloadPool = "{}.svc.id.goog".format(_project_id)
-                }]
+                }
             }
             writeConnectionSecretToRef = {
                 name = _connection_secret_name("gkecluster")
-                namespace = "upbound-system"
             }
         }
     }
@@ -143,20 +144,20 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
         spec = _defaults | {
             forProvider = {
                 location = params.region
-                autoscaling = [{
+                autoscaling = {
                     maxNodeCount = params.nodes.count
                     minNodeCount = params.nodes.count
-                }]
+                }
                 clusterSelector = {
                     matchControllerRef = True
                 }
                 initialNodeCount = params.nodes.count
-                management = [{
+                management = {
                     autoRepair = True
                     autoUpgrade = True
-                }]
+                }
                 maxPodsPerNode = 55
-                nodeConfig = [{
+                nodeConfig = {
                     diskSizeGb = 10
                     imageType = "COS_CONTAINERD"
                     machineType = params.nodes.instanceType
@@ -167,18 +168,19 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                         "https://www.googleapis.com/auth/cloud-platform"
                     ]
                     preemptible = True
-                    shieldedInstanceConfig = [{
+                    shieldedInstanceConfig = {
                         enableIntegrityMonitoring = True
                         enableSecureBoot = True
-                    }]
+                    }
                     serviceAccount = _service_account_email
-                }]
+                }
             }
         }
     }
     helmv1beta1.ProviderConfig{
         metadata = _metadata("providerConfigHelm") | {
             name = params.id
+            namespace = oxr.metadata.namespace
             annotations = {
                 "krm.kcl.dev/composition-resource-name" = "providerConfigHelm"
                 "krm.kcl.dev/ready" = "True"
@@ -189,7 +191,7 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 secretRef = {
                     key = "kubeconfig"
                     name = _connection_secret_name("gkecluster")
-                    namespace = "upbound-system"
+                    namespace = oxr.metadata.namespace
                 }
                 source = "Secret"
             }
@@ -197,7 +199,7 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 secretRef = {
                     key = "private_key"
                     name = _connection_secret_name("sakey")
-                    namespace = "upbound-system"
+                    namespace = oxr.metadata.namespace
                 }
                 source = "Secret"
                 type = "GoogleApplicationCredentials"
@@ -207,6 +209,7 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
     kubernetesv1alpha1.ProviderConfig{
         metadata = _metadata("providerConfigKubernetes") | {
             name = params.id
+            namespace = oxr.metadata.namespace
             annotations = {
                 "krm.kcl.dev/composition-resource-name" = "providerConfigKubernetes"
                 "krm.kcl.dev/ready" = "True"
@@ -217,7 +220,7 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 secretRef = {
                     key = "kubeconfig"
                     name = _connection_secret_name("gkecluster")
-                    namespace = "upbound-system"
+                    namespace = oxr.metadata.namespace
                 }
                 source = "Secret"
             }
@@ -225,20 +228,22 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 secretRef = {
                     key = "private_key"
                     name = _connection_secret_name("sakey")
-                    namespace = "upbound-system"
+                    namespace = oxr.metadata.namespace
                 }
                 source = "Secret"
                 type = "GoogleApplicationCredentials"
             }
         }
     }
-    kubernetesv1alpha2.Object{
+    kubernetesv1alpha1.Object{
         metadata = _metadata("workloadIdentitySettings") | {
             name = "{}-workload-identity-settings".format(params.id)
+            namespace = oxr.metadata.namespace
         }
         spec = {
-            deletionPolicy = "Orphan"
+            managementPolicies = ["Create", "Observe", "Update", "LateInitialize"]
             providerConfigRef = {
+                kind = "ProviderConfig"
                 name = params.id
             }
             forProvider = {
@@ -256,18 +261,26 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
             }
         }
     }
+    corev1.Secret{
+        metadata = {
+            name = "{}-connection".format(oxr.metadata.name)
+            namespace = oxr.metadata.namespace
+            annotations = {
+                "krm.kcl.dev/composition-resource-name" = "connection-secret"
+            }
+            labels = {
+                "crossplane.io/composite" = oxr.metadata.name
+            }
+        }
+        type = "connection.crossplane.io/v1alpha1"
+        if "gkecluster" in _ocds:
+            data = {
+                # Password comes pre-encoded from managed resource's connection secret
+                kubeconfig = _ocds["gkecluster"].ConnectionDetails?.kubeconfig or ""
+            }
+        else:
+            data = {}
+    }
 ]
 
-# Forward connection details from GKE cluster
-_connection_details = {
-    apiVersion: "meta.krm.kcl.dev/v1alpha1"
-    kind: "CompositeConnectionDetails"
-    if "gkecluster" in _ocds:
-        data: {
-            kubeconfig = _ocds["gkecluster"].ConnectionDetails.kubeconfig
-        }
-    else:
-        data: {}
-}
-
-items = _base_items + _gke_items + [_connection_details]
+items = _base_items + _gke_items

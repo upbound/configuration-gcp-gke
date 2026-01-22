@@ -1,7 +1,8 @@
 apiVersion: gcp.platform.upbound.io/v1alpha1
-kind: XNetwork
+kind: Network
 metadata:
   name: configuration-gcp-gke
+  namespace: default
 spec:
   parameters:
     id: configuration-gcp-gke
