@@ -3,4 +3,4 @@ kind: Configuration
 metadata:
   name: cofiguration-gcp-gke
 spec:
-  package: xpkg.upbound.io/upbound/configuration-gcp-gke:v0.11.0
+  package: xpkg.upbound.io/upbound/configuration-gcp-gke:v0.11.1
