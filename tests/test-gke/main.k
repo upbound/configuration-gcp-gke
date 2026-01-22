@@ -1,20 +1,22 @@
 
 import models.io.upbound.dev.meta.v1alpha1 as metav1alpha1
-import models.io.upbound.gcp.cloudplatform.v1beta1 as cloudplatformv1beta1
-import models.io.upbound.gcp.container.v1beta1 as containerv1beta1
+import models.io.upbound.gcpm.cloudplatform.v1beta1 as cloudplatformv1beta1
+import models.io.upbound.gcpm.container.v1beta1 as containerv1beta1
 import models.io.upbound.platform.gcp.v1alpha1 as platformgcpv1alpha1
 import models.io.crossplane.helm.v1beta1 as helmv1beta1
 import models.io.crossplane.kubernetes.v1alpha1 as kubernetesv1alpha1
 import models.io.crossplane.kubernetes.v1alpha2 as kubernetesv1alpha2
+import models.io.k8s.api.core.v1 as corev1
 
 _items = [
     metav1alpha1.CompositionTest {
         metadata.name: "test-gke-cluster"
         spec = {
             assertResources: [
-                platformgcpv1alpha1.XGKE{
+                platformgcpv1alpha1.GKE{
                     metadata = {
                         name = "configuration-gcp-gke"
+                        namespace = "default"
                     }
                     spec = {
                         parameters = {
@@ -25,7 +27,7 @@ _items = [
                                 count = 1
                                 instanceType = "n1-standard-4"
                             }
-                            deletionPolicy = "Delete"
+                            managementPolicies = ["*"]
                             providerConfigName = "default"
                         }
                     }
@@ -40,11 +42,12 @@ _items = [
                         }
                     }
                     spec = {
-                        deletionPolicy = "Delete"
+                        managementPolicies = ["*"]
                         forProvider = {
                             displayName = "configuration-gcp-gke"
                         }
                         providerConfigRef = {
+                            kind = "ProviderConfig"
                             name = "default"
                         }
                     }
@@ -56,18 +59,18 @@ _items = [
                         }
                     }
                     spec = {
-                        deletionPolicy = "Delete"
+                        managementPolicies = ["*"]
                         forProvider = {
                             serviceAccountIdSelector = {
                                 matchControllerRef = True
                             }
                         }
                         providerConfigRef = {
+                            kind = "ProviderConfig"
                             name = "default"
                         }
                         writeConnectionSecretToRef = {
                             name = "configuration-gcp-gke-sakey"
-                            namespace = "upbound-system"
                         }
                     }
                 }
@@ -81,13 +84,14 @@ _items = [
                         }
                     }
                     spec = {
-                        deletionPolicy = "Delete"
+                        managementPolicies = ["*"]
                         forProvider = {
                             role = "roles/container.admin"
                             member = "serviceAccount:test-sa@test-project-123.iam.gserviceaccount.com"
                             project = "test-project-123"
                         }
                         providerConfigRef = {
+                            kind = "ProviderConfig"
                             name = "default"
                         }
                     }
@@ -99,16 +103,16 @@ _items = [
                         }
                     }
                     spec = {
-                        deletionPolicy = "Delete"
+                        managementPolicies = ["*"]
                         forProvider = {
                             location = "us-west2"
                             deletionProtection = False
                             enableIntranodeVisibility = True
                             initialNodeCount = 1
-                            ipAllocationPolicy = [{
+                            ipAllocationPolicy = {
                                 clusterSecondaryRangeName = "pods"
                                 servicesSecondaryRangeName = "services"
-                            }]
+                            }
                             loggingService = "logging.googleapis.com/kubernetes"
                             monitoringService = "monitoring.googleapis.com/kubernetes"
                             networkSelector = {
@@ -121,19 +125,19 @@ _items = [
                                     "networks.gcp.platform.upbound.io/network-id" = "configuration-gcp-gke"
                                 }
                             }
-                            nodeConfig = [{
+                            nodeConfig = {
                                 serviceAccount = "test-sa@test-project-123.iam.gserviceaccount.com"
-                            }]
-                            workloadIdentityConfig = [{
+                            }
+                            workloadIdentityConfig = {
                                 workloadPool = "test-project-123.svc.id.goog"
-                            }]
+                            }
                         }
                         providerConfigRef = {
+                            kind = "ProviderConfig"
                             name = "default"
                         }
                         writeConnectionSecretToRef = {
                             name = "configuration-gcp-gke-gkecluster"
-                            namespace = "upbound-system"
                         }
                     }
                 }
@@ -144,23 +148,23 @@ _items = [
                         }
                     }
                     spec = {
-                        deletionPolicy = "Delete"
+                        managementPolicies = ["*"]
                         forProvider = {
                             location = "us-west2"
-                            autoscaling = [{
+                            autoscaling = {
                                 maxNodeCount = 1
                                 minNodeCount = 1
-                            }]
+                            }
                             clusterSelector = {
                                 matchControllerRef = True
                             }
                             initialNodeCount = 1
-                            management = [{
+                            management = {
                                 autoRepair = True
                                 autoUpgrade = True
-                            }]
+                            }
                             maxPodsPerNode = 55
-                            nodeConfig = [{
+                            nodeConfig = {
                                 diskSizeGb = 10
                                 imageType = "COS_CONTAINERD"
                                 machineType = "n1-standard-4"
@@ -171,14 +175,15 @@ _items = [
                                     "https://www.googleapis.com/auth/cloud-platform"
                                 ]
                                 preemptible = True
-                                shieldedInstanceConfig = [{
+                                shieldedInstanceConfig = {
                                     enableIntegrityMonitoring = True
                                     enableSecureBoot = True
-                                }]
+                                }
                                 serviceAccount = "test-sa@test-project-123.iam.gserviceaccount.com"
-                            }]
+                            }
                         }
                         providerConfigRef = {
+                            kind = "ProviderConfig"
                             name = "default"
                         }
                     }
@@ -251,7 +256,7 @@ _items = [
                         name = "configuration-gcp-gke-workload-identity-settings"
                     }
                     spec = {
-                        deletionPolicy = "Orphan"
+                        managementPolicies = ["Create", "Observe", "Update", "LateInitialize"]
                         providerConfigRef = {
                             name = "configuration-gcp-gke"
                         }
@@ -270,10 +275,23 @@ _items = [
                         }
                     }
                 }
+                corev1.Secret{
+                    metadata = {
+                        name = "configuration-gcp-gke-connection"
+                        namespace = "default"
+                        annotations = {
+                            "crossplane.io/composition-resource-name" = "connection-secret"
+                        }
+                        labels = {
+                            "crossplane.io/composite" = "configuration-gcp-gke"
+                        }
+                    }
+                    type = "connection.crossplane.io/v1alpha1"
+                }
             ]
-            compositionPath: "apis/composition.yaml"
+            compositionPath: "apis/gke/composition.yaml"
             xrPath: "examples/gke-xr.yaml"
-            xrdPath: "apis/definition.yaml"
+            xrdPath: "apis/gke/definition.yaml"
             timeoutSeconds: 60
             validate: False
             observedResources: [
@@ -286,6 +304,7 @@ _items = [
                             displayName: "test-service-account"
                         }
                         providerConfigRef = {
+                            kind = "ProviderConfig"
                             name: "default"
                         }
                     }
@@ -313,6 +332,7 @@ _items = [
                             location: "us-west2"
                         }
                         providerConfigRef = {
+                            kind = "ProviderConfig"
                             name: "default"
                         }
                     }
