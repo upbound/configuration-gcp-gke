@@ -28,11 +28,12 @@ _gke_xr = platformgcpv1alpha1.GKE{
     spec = {
         parameters = {
             id = "e2e-gke-cluster"
+            project = "crossplane-playground"
             region = "us-west2"
-            version = "latest"
+            version = "1.34"
             nodes = {
                 count = 1
-                instanceType = "e2-medium"
+                machineType = "e2-medium"
             }
             managementPolicies = ["*"]
             providerConfigName = "default"

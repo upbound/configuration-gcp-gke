@@ -20,14 +20,30 @@ _items = [
                     spec = {
                         parameters = {
                             id = "configuration-gcp-gke"
+                            project = "test-project-123"
                             region = "us-west2"
-                            version = "latest"
+                            version = "1.34"
                             nodes = {
                                 count = 1
-                                instanceType = "n1-standard-4"
+                                machineType = "e2-standard-2"
                             }
                             managementPolicies = ["*"]
                             providerConfigName = "default"
+                        }
+                    }
+                    status = {
+                        gke = {
+                            clusterName = "configuration-gcp-gke"
+                            project = "test-project-123"
+                            workloadPool = "test-project-123.svc.id.goog"
+                            kubeconfigSecretRef = {
+                                name = "configuration-gcp-gke-connection"
+                                namespace = "default"
+                                key = "kubeconfig"
+                            }
+                            nodePool = {
+                                machineType = "n2-standard-4"
+                            }
                         }
                     }
                 }
@@ -124,6 +140,8 @@ _items = [
                                     "networks.gcp.platform.upbound.io/network-id" = "configuration-gcp-gke"
                                 }
                             }
+                            nodeVersion = "1.34"
+                            minMasterVersion = "1.34"
                             nodeConfig = {
                                 serviceAccount = "test-sa@test-project-123.iam.gserviceaccount.com"
                             }
@@ -166,7 +184,7 @@ _items = [
                             nodeConfig = {
                                 diskSizeGb = 10
                                 imageType = "COS_CONTAINERD"
-                                machineType = "n1-standard-4"
+                                machineType = "e2-standard-2"
                                 metadata = {
                                     "disable-legacy-endpoints" = "true"
                                 }
@@ -179,6 +197,9 @@ _items = [
                                     enableSecureBoot = True
                                 }
                                 serviceAccount = "test-sa@test-project-123.iam.gserviceaccount.com"
+                                workloadMetadataConfig = {
+                                    mode = "GKE_METADATA"
+                                }
                             }
                         }
                         providerConfigRef = {
@@ -299,8 +320,12 @@ _items = [
             validate: False
             observedResources: [
                 cloudplatformv1beta1.ServiceAccount{
-                    metadata.annotations = {
-                        "crossplane.io/composition-resource-name": "serviceaccount"
+                    metadata = {
+                        name: "configuration-gcp-gke"
+                        namespace: "default"
+                        annotations = {
+                            "crossplane.io/composition-resource-name": "serviceaccount"
+                        }
                     }
                     spec = {
                         forProvider = {
@@ -327,8 +352,12 @@ _items = [
                     }
                 }
                 containerv1beta1.Cluster{
-                    metadata.annotations = {
-                        "crossplane.io/composition-resource-name": "gkecluster"
+                    metadata = {
+                        name: "configuration-gcp-gke"
+                        namespace: "default"
+                        annotations = {
+                            "crossplane.io/composition-resource-name": "gkecluster"
+                        }
                     }
                     spec = {
                         forProvider = {
@@ -342,6 +371,31 @@ _items = [
                     status = {
                         atProvider = {
                             project: "test-project-123"
+                        }
+                    }
+                }
+                containerv1beta1.NodePool{
+                    metadata = {
+                        name: "configuration-gcp-gke"
+                        namespace: "default"
+                        annotations = {
+                            "crossplane.io/composition-resource-name": "node-pool"
+                        }
+                    }
+                    spec = {
+                        forProvider = {
+                            location: "us-west2"
+                        }
+                        providerConfigRef = {
+                            kind = "ProviderConfig"
+                            name: "default"
+                        }
+                    }
+                    status = {
+                        atProvider = {
+                            nodeConfig = {
+                                machineType: "n2-standard-4"
+                            }
                         }
                     }
                 }
