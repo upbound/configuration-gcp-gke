@@ -47,8 +47,7 @@ _defaults = {
 }
 
 _connection_secret_name = lambda suffix: str -> str {
-    _uid = oxr.metadata.uid if oxr.metadata?.uid else oxr.metadata.name
-    "{}-{}".format(_uid, suffix)
+    "{}-{}".format(params.id, suffix)
 }
 
 # Create service account and IAM resources first

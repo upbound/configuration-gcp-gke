@@ -278,8 +278,12 @@ _items = [
             validate: False
             observedResources: [
                 cloudplatformv1beta1.ServiceAccount{
-                    metadata.annotations = {
-                        "crossplane.io/composition-resource-name": "serviceaccount"
+                    metadata = {
+                        name: "configuration-gcp-gke"
+                        namespace: "default"
+                        annotations = {
+                            "crossplane.io/composition-resource-name": "serviceaccount"
+                        }
                     }
                     spec = {
                         forProvider = {
