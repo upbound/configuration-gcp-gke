@@ -33,7 +33,7 @@ _gke_xr = platformgcpv1alpha1.GKE{
             version = "1.34"
             nodes = {
                 count = 1
-                machineType = "e2-medium"
+                instanceType = "e2-medium"
             }
             managementPolicies = ["*"]
             providerConfigName = "default"

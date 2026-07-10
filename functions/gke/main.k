@@ -163,7 +163,7 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 nodeConfig = {
                     diskSizeGb = 10
                     imageType = "COS_CONTAINERD"
-                    machineType = params.nodes.machineType
+                    machineType = params.nodes.instanceType
                     metadata = {
                         "disable-legacy-endpoints" = "true"
                     }
@@ -294,7 +294,7 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
 # handle both shapes; fall back to the desired machineType when unset.
 _nodepool_node_config = _ocds?["node-pool"]?.Resource?.status?.atProvider?.nodeConfig
 _nodepool_node_config_obj = (_nodepool_node_config[0] if len(_nodepool_node_config) > 0 else {}) if typeof(_nodepool_node_config) == "list" else (_nodepool_node_config or {})
-_nodepool_machine_type = _nodepool_node_config_obj?.machineType or params.nodes.machineType
+_nodepool_machine_type = _nodepool_node_config_obj?.machineType or params.nodes.instanceType
 
 # Observed cluster metadata name, falling back to the params.id external name.
 _observed_cluster_name = _ocds?.gkecluster?.Resource?.metadata?.name or params.id
@@ -324,7 +324,7 @@ _status_patch = {
                 key: "kubeconfig"
             }
             nodePool: {
-                machineType: _nodepool_machine_type
+                instanceType: _nodepool_machine_type
             }
         }
     }

@@ -25,7 +25,7 @@ _items = [
                             version = "1.34"
                             nodes = {
                                 count = 1
-                                machineType = "e2-standard-2"
+                                instanceType = "e2-standard-2"
                             }
                             managementPolicies = ["*"]
                             providerConfigName = "default"
@@ -42,7 +42,7 @@ _items = [
                                 key = "kubeconfig"
                             }
                             nodePool = {
-                                machineType = "n2-standard-4"
+                                instanceType = "n2-standard-4"
                             }
                         }
                     }

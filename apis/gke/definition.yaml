@@ -76,16 +76,15 @@ spec:
                         count:
                           type: integer
                           description: Desired node count, from 1 to 100.
-                        machineType:
+                        instanceType:
                           type: string
-                          description: Machine type associated with the node pool.
-                          default: e2-standard-2
+                          description: instance types associated with the Node Group.
+                          default: n1-standard-4
                       required:
                         - count
-                        - machineType
+                        - instanceType
                   required:
                     - id
-                    - project
                     - region
                     - managementPolicies
                     - providerConfigName

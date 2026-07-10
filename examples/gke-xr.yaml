@@ -11,4 +11,4 @@ spec:
     version: "1.34"
     nodes:
       count: 1
-      machineType: e2-standard-2
+      instanceType: e2-standard-2
