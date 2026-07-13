@@ -12,3 +12,4 @@ spec:
     nodes:
       count: 1
       instanceType: e2-standard-2
+      diskSizeGb: 20
