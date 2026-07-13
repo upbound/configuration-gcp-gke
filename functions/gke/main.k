@@ -161,7 +161,7 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 }
                 maxPodsPerNode = 55
                 nodeConfig = {
-                    diskSizeGb = 10
+                    diskSizeGb = params.nodes?.diskSizeGb or 20
                     imageType = "COS_CONTAINERD"
                     machineType = params.nodes.instanceType
                     metadata = {

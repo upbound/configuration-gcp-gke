@@ -182,7 +182,7 @@ _items = [
                             }
                             maxPodsPerNode = 55
                             nodeConfig = {
-                                diskSizeGb = 10
+                                diskSizeGb = 20
                                 imageType = "COS_CONTAINERD"
                                 machineType = "e2-standard-2"
                                 metadata = {
