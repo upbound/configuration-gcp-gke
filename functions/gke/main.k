@@ -1,16 +1,17 @@
 
 import models.io.upbound.gcpm.cloudplatform.v1beta1 as cloudplatformv1beta1
 import models.io.upbound.gcpm.container.v1beta1 as containerv1beta1
-import models.io.upbound.platform.gcp.v1alpha1 as platformgcpv1alpha1
 import models.io.crossplane.helmm.v1beta1 as helmv1beta1
 import models.io.crossplane.kubernetesm.v1alpha1 as kubernetesv1alpha1
 import models.io.k8s.api.core.v1 as corev1
 import base64
 
-oxr = platformgcpv1alpha1.GKE{**option("params").oxr}
+oxr = option("params").oxr # observed composite resource
 _ocds = option("params")?.ocds or {}
+_dxr = option("params").dxr # desired composite resource
 params = oxr.spec.parameters
 providerConfigRefName = params.providerConfigName or "default"
+_workloadIdentityEnabled = params?.workloadIdentity?.enabled if params?.workloadIdentity?.enabled != Undefined else True
 
 # Get status information from observed composed resources using correct access pattern
 _service_account_id = _ocds?.serviceaccount?.Resource?.status?.atProvider?.id or ""
@@ -21,18 +22,21 @@ _cluster_project_id = _ocds?.gkecluster?.Resource?.status?.atProvider?.project o
 _serviceAccountReadyCondition = [condition for condition in (_ocds?.serviceaccount?.Resource?.status?.conditions or []) if condition.type == "Ready" and condition.status == "True"]
 _isServiceAccountReady = len(_serviceAccountReadyCondition) > 0
 
-# Extract project ID from service account status
-_project_id = ""
+# Extract project ID from service account status (used as a fallback)
+_derived_project_id = ""
 if _service_account_id:
     # Format: "projects/test-project-123/serviceAccounts/email"
     # Split by "/" and take the element at index 1
     parts = _service_account_id.split("/")
     if len(parts) >= 2 and parts[0] == "projects":
-        _project_id = parts[1]
+        _derived_project_id = parts[1]
 
 # Get project ID from GKE cluster status (fallback)
-if not _project_id and _cluster_project_id:
-    _project_id = _cluster_project_id
+if not _derived_project_id and _cluster_project_id:
+    _derived_project_id = _cluster_project_id
+
+# Prefer the explicit params.project; fall back to the runtime-derived project id.
+_project_id = params.project or _derived_project_id
 
 _metadata = lambda name: str -> any {
     {
@@ -50,8 +54,7 @@ _defaults = {
 }
 
 _connection_secret_name = lambda suffix: str -> str {
-    _uid = oxr.metadata.uid if oxr.metadata?.uid else oxr.metadata.name
-    "{}-{}".format(_uid, suffix)
+    "{}-{}".format(params.id, suffix)
 }
 
 # Create service account and IAM resources first
@@ -130,9 +133,9 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 nodeConfig = {
                     serviceAccount = _service_account_email
                 }
-                workloadIdentityConfig = {
+                **({workloadIdentityConfig = {
                     workloadPool = "{}.svc.id.goog".format(_project_id)
-                }
+                }} if _workloadIdentityEnabled else {})
             }
             writeConnectionSecretToRef = {
                 name = _connection_secret_name("gkecluster")
@@ -158,7 +161,7 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 }
                 maxPodsPerNode = 55
                 nodeConfig = {
-                    diskSizeGb = 10
+                    diskSizeGb = params.nodes?.diskSizeGb or 20
                     imageType = "COS_CONTAINERD"
                     machineType = params.nodes.instanceType
                     metadata = {
@@ -173,6 +176,9 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                         enableSecureBoot = True
                     }
                     serviceAccount = _service_account_email
+                    **({workloadMetadataConfig = {
+                        mode = "GKE_METADATA"
+                    }} if _workloadIdentityEnabled else {})
                 }
             }
         }
@@ -283,4 +289,45 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
     }
 ]
 
-items = _base_items + _gke_items
+# Read the observed NodePool nodeConfig. upjet serializes nodeConfig as either a
+# single object or a single-element list depending on the provider version, so
+# handle both shapes; fall back to the desired machineType when unset.
+_nodepool_node_config = _ocds?["node-pool"]?.Resource?.status?.atProvider?.nodeConfig
+_nodepool_node_config_obj = (_nodepool_node_config[0] if len(_nodepool_node_config) > 0 else {}) if typeof(_nodepool_node_config) == "list" else (_nodepool_node_config or {})
+_nodepool_machine_type = _nodepool_node_config_obj?.machineType or params.nodes.instanceType
+
+# Observed cluster metadata name, falling back to the params.id external name.
+_observed_cluster_name = _ocds?.gkecluster?.Resource?.metadata?.name or params.id
+
+# Surface typed status into the freeform status.gke so higher-level
+# configurations (e.g. configuration-gcp-ctp) can compose a GKE XR and read the
+# resolved project, workload pool, kubeconfig secret and running machine type
+# instead of composing their own observe-only managed resources. Emit a minimal
+# status patch on the composite (apiVersion/kind/metadata carry identity; the
+# rest of the spec is left untouched so function-auto-ready still aggregates
+# composed-resource readiness).
+_status_patch = {
+    apiVersion: _dxr.apiVersion
+    kind: _dxr.kind
+    metadata: {
+        name: oxr.metadata.name
+        namespace: oxr.metadata.namespace
+    }
+    status: {
+        gke: {
+            clusterName: _observed_cluster_name
+            project: _project_id
+            workloadPool: "{}.svc.id.goog".format(_project_id)
+            kubeconfigSecretRef: {
+                name: "{}-connection".format(oxr.metadata.name)
+                namespace: oxr.metadata.namespace
+                key: "kubeconfig"
+            }
+            nodePool: {
+                instanceType: _nodepool_machine_type
+            }
+        }
+    }
+}
+
+items = _base_items + _gke_items + [_status_patch]
