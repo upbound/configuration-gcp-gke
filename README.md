@@ -54,10 +54,24 @@ This configuration follows modern Upbound DevEx best practices:
 
 This configuration requires (Crossplane v2 compatible):
 
-- **configuration-gcp-network v2:** Provides VPC and subnet resources (matched via `network-id` labels)
-- **GCP Providers (namespaced):** gcp-compute, gcp-container and gcp-cloudplatform `>=v2.6.0, <v3.0.0`
+- **configuration-gcp-network v3:** Provides VPC and subnet resources (matched via `network-id` labels)
+- **GCP Providers (namespaced):** gcp-compute, gcp-container and gcp-cloudplatform `>=v3.0.5, <v4.0.0`
 - **Additional Providers:** helm v1.0.0, kubernetes v1.0.0
 - **Crossplane Functions:** function-auto-ready v0.4.0 for readiness management
+
+## Upgrading to provider-gcp v3
+
+This configuration requires provider-gcp `>=v3.0.5, <v4.0.0`, which removes the
+deprecated `v1beta1` API versions.
+
+- New control planes can install it directly.
+- Control planes on provider-gcp below v2.6 must first install the previous
+  release of this configuration, which requires provider-gcp
+  `>=v2.6.0, <v3.0.0`, and let the providers reach v2.6.
+- Before upgrading from v2.6, follow the provider's
+  [storage version migration](https://github.com/crossplane-contrib/provider-upjet-gcp/releases/tag/v3.0.0):
+  apply its migration `DeploymentRuntimeConfig` to each sub-provider this
+  configuration installs (provider-gcp-compute, provider-gcp-container and provider-gcp-cloudplatform), not to `provider-family-gcp`.
 
 ## Deployment
 
