@@ -55,7 +55,7 @@ This configuration follows modern Upbound DevEx best practices:
 This configuration requires (Crossplane v2 compatible):
 
 - **configuration-gcp-network v2:** Provides VPC and subnet resources (matched via `network-id` labels)
-- **GCP Providers (namespaced):** gcp-compute v2.1.0, gcp-container v2.4.0, gcp-cloudplatform v2.1.0
+- **GCP Providers (namespaced):** gcp-compute, gcp-container and gcp-cloudplatform `>=v2.6.0, <v3.0.0`
 - **Additional Providers:** helm v1.0.0, kubernetes v1.0.0
 - **Crossplane Functions:** function-auto-ready v0.4.0 for readiness management
 
