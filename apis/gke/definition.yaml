@@ -69,6 +69,22 @@ spec:
                           default: true
                       default:
                         enabled: true
+                    networkRef:
+                      type: object
+                      description: >-
+                        Name of a Network in this namespace to run in. When set, the cluster is wired
+                        from that Network's published status (status.vpc.selfLink,
+                        status.subnetwork.selfLink and status.subnetwork.secondaryRanges), and nothing
+                        that needs the network is composed until the Network has published them. When
+                        unset, the network is found by the networks.gcp.platform.upbound.io/network-id
+                        label matching spec.parameters.id, as before.
+                      properties:
+                        name:
+                          type: string
+                          minLength: 1
+                          description: Name of the Network (gcp.platform.upbound.io/v1alpha1) in this GKE's namespace.
+                      required:
+                        - name
                     nodes:
                       type: object
                       description: GKE node configuration parameters.
@@ -99,7 +115,42 @@ spec:
               description: A Status represents the observed state
               properties:
                 gke:
-                  description: Freeform field containing status information for gke
+                  description: >-
+                    Status information for the GKE cluster, for higher-level configurations to read
+                    instead of composing their own observe-only resources. The fields below are
+                    published by this configuration; others are preserved.
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
+                  properties:
+                    clusterName:
+                      type: string
+                      description: Name of the composed Cluster managed resource; spec.parameters.id until it is observed.
+                    project:
+                      type: string
+                      description: GCP project of the cluster; spec.parameters.project, else the project of the observed service account or cluster.
+                    workloadPool:
+                      type: string
+                      description: Workload Identity pool of the cluster, <project>.svc.id.goog.
+                    kubeconfigSecretRef:
+                      type: object
+                      description: Secret holding the cluster's kubeconfig.
+                      x-kubernetes-preserve-unknown-fields: true
+                      properties:
+                        name:
+                          type: string
+                          description: Name of the Secret, <GKE name>-connection.
+                        namespace:
+                          type: string
+                          description: Namespace of the Secret, this GKE's namespace.
+                        key:
+                          type: string
+                          description: Key of the kubeconfig in the Secret.
+                    nodePool:
+                      type: object
+                      description: The node pool as it is running.
+                      x-kubernetes-preserve-unknown-fields: true
+                      properties:
+                        instanceType:
+                          type: string
+                          description: Machine type of the nodes; spec.parameters.nodes.instanceType until the node pool is observed.
               type: object

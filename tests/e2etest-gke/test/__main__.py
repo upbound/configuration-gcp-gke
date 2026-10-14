@@ -6,6 +6,7 @@ from models.io.upbound.dev.meta.e2etest import v1alpha1 as e2etest
 
 NAMESPACE = "default"
 CLUSTER_ID = "e2e-gke-cluster"
+NETWORK = f"{CLUSTER_ID}-network"
 
 test = e2etest.E2ETest(
     metadata=k8s.ObjectMeta(name="e2etest-gke-cluster"),
@@ -16,11 +17,12 @@ test = e2etest.E2ETest(
         ),
         defaultConditions=["Ready", "Synced"],
         manifests=[
-            # The GKE cluster finds the network through its network-id labels.
+            # The GKE references this Network by name and runs where its status says, so this
+            # proves the published-status wiring against real GCP, not just in a render.
             {
                 "apiVersion": "gcp.platform.upbound.io/v1alpha1",
                 "kind": "Network",
-                "metadata": {"name": f"{CLUSTER_ID}-network", "namespace": NAMESPACE},
+                "metadata": {"name": NETWORK, "namespace": NAMESPACE},
                 "spec": {
                     "parameters": {
                         "id": CLUSTER_ID,
@@ -43,6 +45,7 @@ test = e2etest.E2ETest(
                         "nodes": {"count": 1, "instanceType": "e2-medium"},
                         "managementPolicies": ["*"],
                         "providerConfigName": "default",
+                        "networkRef": {"name": NETWORK},
                     },
                 },
             },

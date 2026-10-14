@@ -86,6 +86,102 @@ OBSERVED = [
     ),
 ]
 
+# The same GKE as examples/gke-xr.yaml, wired to a Network by name rather than by label.
+NETWORK = "configuration-gcp-gke-network"
+XR_WITH_NETWORK_REF = {
+    "apiVersion": "gcp.platform.upbound.io/v1alpha1",
+    "kind": "GKE",
+    "metadata": {"name": ID, "namespace": NAMESPACE},
+    "spec": {
+        "parameters": {
+            "id": ID,
+            "project": PROJECT,
+            "region": "us-west2",
+            "version": "1.34",
+            "nodes": {"count": 1, "instanceType": "e2-standard-2", "diskSizeGb": 20},
+            "managementPolicies": ["*"],
+            "providerConfigName": "default",
+            "networkRef": {"name": NETWORK},
+        },
+    },
+}
+
+COMPUTE = "https://www.googleapis.com/compute/v1"
+NETWORK_SELF_LINK = f"{COMPUTE}/projects/{PROJECT}/global/networks/{ID}"
+SUBNETWORK_SELF_LINK = f"{COMPUTE}/projects/{PROJECT}/regions/us-west2/subnetworks/{ID}-subnetwork"
+
+
+def network(published: bool) -> dict:
+    """The Network XR the GKE references, with the status configuration-gcp-network publishes.
+
+    Names, region, CIDR and secondary ranges are published from the start; ids and selfLinks only
+    once the network and subnetwork exist in GCP.
+    """
+    status = {
+        "vpc": {"name": ID},
+        "subnetwork": {
+            "name": f"{ID}-subnetwork",
+            "region": "us-west2",
+            "ipCidrRange": "172.16.0.0/16",
+            "secondaryRanges": {"pods": "pods", "services": "services"},
+        },
+    }
+    if published:
+        status["vpc"] |= {
+            "id": f"projects/{PROJECT}/global/networks/{ID}",
+            "selfLink": NETWORK_SELF_LINK,
+        }
+        status["subnetwork"] |= {
+            "id": f"projects/{PROJECT}/regions/us-west2/subnetworks/{ID}-subnetwork",
+            "selfLink": SUBNETWORK_SELF_LINK,
+        }
+    return {
+        "apiVersion": "gcp.platform.upbound.io/v1alpha1",
+        "kind": "Network",
+        "metadata": {"name": NETWORK, "namespace": NAMESPACE},
+        "spec": {"parameters": {"id": ID, "region": "us-west2"}},
+        "status": status,
+    }
+
+
+# Resources that only need the service account, composed whether or not the Network is ready.
+SERVICE_ACCOUNT_RESOURCES = [
+    {
+        "apiVersion": CLOUDPLATFORM,
+        "kind": "ServiceAccount",
+        "metadata": {"annotations": {"crossplane.io/external-name": ID}},
+        "spec": {"forProvider": {"displayName": ID}},
+    },
+    {
+        "apiVersion": CLOUDPLATFORM,
+        "kind": "ServiceAccountKey",
+        "spec": {"writeConnectionSecretToRef": {"name": f"{ID}-sakey"}},
+    },
+    {
+        "apiVersion": CLOUDPLATFORM,
+        "kind": "ProjectIAMMember",
+        "spec": {"forProvider": {"member": f"serviceAccount:{SA_EMAIL}", "project": PROJECT}},
+    },
+]
+
+
+def network_ref_test(name: str, published: bool, assert_resources: list[dict]):
+    return compositiontest.CompositionTest(
+        metadata=k8s.ObjectMeta(name=name),
+        spec=compositiontest.Spec(
+            assertResources=SERVICE_ACCOUNT_RESOURCES + assert_resources,
+            compositionPath=COMPOSITION,
+            xr=XR_WITH_NETWORK_REF,
+            xrdPath=XRD,
+            timeoutSeconds=60,
+            validate=True,
+            # extraResources feed the function's required resources.
+            extraResources=[network(published)],
+            observedResources=OBSERVED[:1],
+        ),
+    )
+
+
 tests = [
     compositiontest.CompositionTest(
         metadata=k8s.ObjectMeta(name="test-gke-cluster"),
@@ -291,6 +387,56 @@ tests = [
             validate=True,
             observedResources=OBSERVED,
         ),
+    ),
+    # Before the Network publishes its selfLinks only the service account resources are composed;
+    # that nothing else is, is asserted in the function's unit tests.
+    network_ref_test(
+        "test-gke-network-ref-waiting",
+        published=False,
+        assert_resources=[
+            {
+                "apiVersion": "gcp.platform.upbound.io/v1alpha1",
+                "kind": "GKE",
+                "metadata": {"name": ID, "namespace": NAMESPACE},
+                "status": {"gke": {"clusterName": ID, "project": PROJECT}},
+            },
+        ],
+    ),
+    # Once it has, the cluster is wired from the Network's status rather than by label.
+    network_ref_test(
+        "test-gke-network-ref-published",
+        published=True,
+        assert_resources=[
+            {
+                "apiVersion": CONTAINER,
+                "kind": "Cluster",
+                "metadata": {"labels": COMPOSITE_LABELS},
+                "spec": {
+                    "forProvider": {
+                        "location": "us-west2",
+                        "network": NETWORK_SELF_LINK,
+                        "subnetwork": SUBNETWORK_SELF_LINK,
+                        "ipAllocationPolicy": {
+                            "clusterSecondaryRangeName": "pods",
+                            "servicesSecondaryRangeName": "services",
+                        },
+                        "nodeConfig": {"serviceAccount": SA_EMAIL},
+                    },
+                    "writeConnectionSecretToRef": {"name": f"{ID}-gkecluster"},
+                },
+            },
+            {
+                "apiVersion": CONTAINER,
+                "kind": "NodePool",
+                "spec": {"forProvider": {"clusterSelector": {"matchControllerRef": True}}},
+            },
+            {
+                "apiVersion": "v1",
+                "kind": "Secret",
+                "metadata": {"name": f"{ID}-connection", "namespace": NAMESPACE},
+                "type": "connection.crossplane.io/v1alpha1",
+            },
+        ],
     ),
 ]
 
