@@ -2,7 +2,7 @@
 
 This repository contains an Upbound project, tailored for users establishing their initial control plane with [Upbound](https://cloud.upbound.io). This configuration deploys fully managed [Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine) clusters with secure networking and workload identity.
 
-**Version:** Crossplane v2 (namespaced resources, embedded KCL functions)
+**Version:** Crossplane v2 (namespaced resources, embedded Python functions)
 
 ## Overview
 
@@ -16,7 +16,7 @@ In this specific configuration, the API contains:
 
 - **a [GCP GKE](/apis/gke/definition.yaml) custom resource type.**
 - **Composition:** Configured in [/apis/gke/composition.yaml](/apis/gke/composition.yaml)
-- **Embedded Function:** The Composition logic is encapsulated within [embedded function](/functions/gke/main.k)
+- **Embedded Function:** The Composition logic is encapsulated within [embedded function](/functions/gke/function/fn.py)
 
 ## Architecture
 
@@ -46,18 +46,32 @@ This configuration creates the following GCP resources in a managed sequence:
 This configuration follows modern Upbound DevEx best practices:
 
 - **Conditional Resource Creation:** GKE cluster is only created after service account is ready, preventing immutable field update conflicts
-- **Embedded KCL Functions:** Replaced complex patch-and-transform pipelines with maintainable KCL code
-- **Status Reference Handling:** Uses the pattern `_ocds?.resourceName?.Resource?.status?.atProvider?.field` for cross-resource dependencies
+- **Embedded Python Functions:** Replaced complex patch-and-transform pipelines with a maintainable Python function built on typed models generated from the provider schemas
+- **Status Reference Handling:** Reads cross-resource dependencies from observed composed resources, e.g. `_get(observed, SERVICE_ACCOUNT, "status", "atProvider", "email")`, keyed by composition resource name
 - **Comprehensive Testing:** Includes both composition tests and end-to-end deployment tests
 
 ## Dependencies
 
 This configuration requires (Crossplane v2 compatible):
 
-- **configuration-gcp-network v2:** Provides VPC and subnet resources (matched via `network-id` labels)
-- **GCP Providers (namespaced):** gcp-compute v2.1.0, gcp-container v2.4.0, gcp-cloudplatform v2.1.0
+- **configuration-gcp-network v3:** Provides VPC and subnet resources (matched via `network-id` labels)
+- **GCP Providers (namespaced):** gcp-compute, gcp-container and gcp-cloudplatform `>=v3.0.5, <v4.0.0`
 - **Additional Providers:** helm v1.0.0, kubernetes v1.0.0
 - **Crossplane Functions:** function-auto-ready v0.4.0 for readiness management
+
+## Upgrading to provider-gcp v3
+
+This configuration requires provider-gcp `>=v3.0.5, <v4.0.0`, which removes the
+deprecated `v1beta1` API versions.
+
+- New control planes can install it directly.
+- Control planes running provider-gcp below v2.6 must upgrade those providers to
+  v2.6 first, then follow the provider's
+  [storage version migration](https://github.com/crossplane-contrib/provider-upjet-gcp/releases/tag/v3.0.0):
+  apply its migration `DeploymentRuntimeConfig` to each sub-provider this
+  configuration installs (provider-gcp-compute, provider-gcp-container and
+  provider-gcp-cloudplatform), not to `provider-family-gcp`. Alternatively,
+  rebuild the control plane.
 
 ## Deployment
 
@@ -118,7 +132,7 @@ This configuration has been migrated from Crossplane v1 to v2. Key changes inclu
 - **Namespace Requirement:** All XRs must include `namespace: default` (or other namespace)
 - **managementPolicies:** Replaces `deletionPolicy` parameter
 - **Connection Secrets:** Automatically created with pattern `{xr-name}-connection`, no `writeConnectionSecretToRef` in XR spec
-- **Provider APIs:** Namespaced groups (`gcpm`, `helmm`, `kubernetesm`) instead of cluster-scoped
+- **Provider APIs:** Namespaced groups (`*.gcp.m.upbound.io`, `helm.m.crossplane.io`, `kubernetes.m.crossplane.io`) instead of cluster-scoped
 - **File Structure:** Reorganized into `apis/gke/` subdirectory
 
 ### Migration Path
