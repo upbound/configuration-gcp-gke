@@ -141,7 +141,6 @@ _items = [
                                     "networks.gcp.platform.upbound.io/network-id" = "configuration-gcp-gke"
                                 }
                             }
-                            nodeVersion = "1.34"
                             minMasterVersion = "1.34"
                             workloadIdentityConfig = {
                                 workloadPool = "test-project-123.svc.id.goog"

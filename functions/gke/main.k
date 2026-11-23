@@ -141,7 +141,10 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                         "networks.gcp.platform.upbound.io/network-id" = params.id
                     }
                 }
-                **({nodeVersion = params.version} if params.version != "latest" else {})
+                # Only the control plane version is pinned. nodeVersion applies to the
+                # default node pool and is rejected together with
+                # removeDefaultNodePool; the managed NodePool is created at the
+                # control plane's version and then follows auto-upgrade.
                 **({minMasterVersion = params.version} if params.version != "latest" else {})
                 **({workloadIdentityConfig = {
                     workloadPool = "{}.svc.id.goog".format(_project_id)
