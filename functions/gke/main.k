@@ -107,11 +107,24 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
     containerv1beta1.Cluster{
         metadata = _metadata("gkecluster")
         spec = _defaults | {
+            # The cluster-level nodeConfig only configures GKE's temporary
+            # default pool (removed via removeDefaultNodePool), so set it at
+            # creation only. Once that pool is gone GKE reports the managed
+            # NodePool's config here, and managing it in forProvider would
+            # make every update look like a cluster replacement.
+            initProvider = {
+                nodeConfig = {
+                    serviceAccount = _service_account_email
+                }
+            }
             forProvider = {
                 location = params.region
                 deletionProtection = False
                 enableIntranodeVisibility = True
+                # GKE requires a node pool at creation time; the managed
+                # NodePool below replaces it, so remove the default pool.
                 initialNodeCount = 1
+                removeDefaultNodePool = True
                 ipAllocationPolicy = {
                     clusterSecondaryRangeName = "pods"
                     servicesSecondaryRangeName = "services"
@@ -128,11 +141,11 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                         "networks.gcp.platform.upbound.io/network-id" = params.id
                     }
                 }
-                **({nodeVersion = params.version} if params.version != "latest" else {})
+                # Only the control plane version is pinned. nodeVersion applies to the
+                # default node pool and is rejected together with
+                # removeDefaultNodePool; the managed NodePool is created at the
+                # control plane's version and then follows auto-upgrade.
                 **({minMasterVersion = params.version} if params.version != "latest" else {})
-                nodeConfig = {
-                    serviceAccount = _service_account_email
-                }
                 **({workloadIdentityConfig = {
                     workloadPool = "{}.svc.id.goog".format(_project_id)
                 }} if _workloadIdentityEnabled else {})
@@ -147,6 +160,9 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
         spec = _defaults | {
             forProvider = {
                 location = params.region
+                # Node counts are per zone. Pin the zones when requested,
+                # otherwise the pool spans all of the cluster's zones.
+                **({nodeLocations = params.nodes.zones} if params.nodes?.zones else {})
                 autoscaling = {
                     maxNodeCount = params.nodes.count
                     minNodeCount = params.nodes.count

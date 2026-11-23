@@ -124,6 +124,7 @@ _items = [
                             deletionProtection = False
                             enableIntranodeVisibility = True
                             initialNodeCount = 1
+                            removeDefaultNodePool = True
                             ipAllocationPolicy = {
                                 clusterSecondaryRangeName = "pods"
                                 servicesSecondaryRangeName = "services"
@@ -140,11 +141,7 @@ _items = [
                                     "networks.gcp.platform.upbound.io/network-id" = "configuration-gcp-gke"
                                 }
                             }
-                            nodeVersion = "1.34"
                             minMasterVersion = "1.34"
-                            nodeConfig = {
-                                serviceAccount = "test-sa@test-project-123.iam.gserviceaccount.com"
-                            }
                             workloadIdentityConfig = {
                                 workloadPool = "test-project-123.svc.id.goog"
                             }
@@ -152,6 +149,11 @@ _items = [
                         providerConfigRef = {
                             kind = "ProviderConfig"
                             name = "default"
+                        }
+                        initProvider = {
+                            nodeConfig = {
+                                serviceAccount = "test-sa@test-project-123.iam.gserviceaccount.com"
+                            }
                         }
                         writeConnectionSecretToRef = {
                             name = "configuration-gcp-gke-gkecluster"
@@ -397,6 +399,78 @@ _items = [
                                 machineType: "n2-standard-4"
                             }
                         }
+                    }
+                }
+            ]
+        }
+    }
+    # nodes.zones pins the node pool to the given zones, so count is the total
+    # node count when a single zone is given.
+    metav1alpha1.CompositionTest {
+        metadata.name: "test-gke-node-pool-zones"
+        spec = {
+            assertResources: [
+                containerv1beta1.NodePool{
+                    metadata = {
+                        annotations = {
+                            "crossplane.io/composition-resource-name" = "node-pool"
+                        }
+                    }
+                    spec = {
+                        forProvider = {
+                            location = "us-west2"
+                            nodeLocations = ["us-west2-a"]
+                            autoscaling = {
+                                maxNodeCount = 1
+                                minNodeCount = 1
+                            }
+                            initialNodeCount = 1
+                        }
+                    }
+                }
+            ]
+            compositionPath: "apis/gke/composition.yaml"
+            xr: platformgcpv1alpha1.GKE{
+                metadata = {
+                    name = "configuration-gcp-gke"
+                    namespace = "default"
+                }
+                spec.parameters = {
+                    id = "configuration-gcp-gke"
+                    project = "test-project-123"
+                    region = "us-west2"
+                    version = "1.34"
+                    nodes = {
+                        count = 1
+                        instanceType = "e2-standard-2"
+                        zones = ["us-west2-a"]
+                    }
+                }
+            }
+            xrdPath: "apis/gke/definition.yaml"
+            timeoutSeconds: 60
+            validate: False
+            observedResources: [
+                cloudplatformv1beta1.ServiceAccount{
+                    metadata = {
+                        name: "configuration-gcp-gke"
+                        namespace: "default"
+                        annotations = {
+                            "crossplane.io/composition-resource-name": "serviceaccount"
+                        }
+                    }
+                    spec.forProvider.displayName = "test-service-account"
+                    status = {
+                        atProvider = {
+                            id: "projects/test-project-123/serviceAccounts/test-sa@test-project-123.iam.gserviceaccount.com"
+                            email: "test-sa@test-project-123.iam.gserviceaccount.com"
+                        }
+                        conditions = [{
+                            type: "Ready"
+                            status: "True"
+                            lastTransitionTime: "2024-01-01T00:00:00Z"
+                            reason: "Available"
+                        }]
                     }
                 }
             ]
