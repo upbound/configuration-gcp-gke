@@ -143,9 +143,6 @@ _items = [
                             }
                             nodeVersion = "1.34"
                             minMasterVersion = "1.34"
-                            nodeConfig = {
-                                serviceAccount = "test-sa@test-project-123.iam.gserviceaccount.com"
-                            }
                             workloadIdentityConfig = {
                                 workloadPool = "test-project-123.svc.id.goog"
                             }
@@ -153,6 +150,11 @@ _items = [
                         providerConfigRef = {
                             kind = "ProviderConfig"
                             name = "default"
+                        }
+                        initProvider = {
+                            nodeConfig = {
+                                serviceAccount = "test-sa@test-project-123.iam.gserviceaccount.com"
+                            }
                         }
                         writeConnectionSecretToRef = {
                             name = "configuration-gcp-gke-gkecluster"

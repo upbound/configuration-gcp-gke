@@ -107,6 +107,16 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
     containerv1beta1.Cluster{
         metadata = _metadata("gkecluster")
         spec = _defaults | {
+            # The cluster-level nodeConfig only configures GKE's temporary
+            # default pool (removed via removeDefaultNodePool), so set it at
+            # creation only. Once that pool is gone GKE reports the managed
+            # NodePool's config here, and managing it in forProvider would
+            # make every update look like a cluster replacement.
+            initProvider = {
+                nodeConfig = {
+                    serviceAccount = _service_account_email
+                }
+            }
             forProvider = {
                 location = params.region
                 deletionProtection = False
@@ -133,9 +143,6 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 }
                 **({nodeVersion = params.version} if params.version != "latest" else {})
                 **({minMasterVersion = params.version} if params.version != "latest" else {})
-                nodeConfig = {
-                    serviceAccount = _service_account_email
-                }
                 **({workloadIdentityConfig = {
                     workloadPool = "{}.svc.id.goog".format(_project_id)
                 }} if _workloadIdentityEnabled else {})
