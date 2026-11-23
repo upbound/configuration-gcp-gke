@@ -111,7 +111,10 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
                 location = params.region
                 deletionProtection = False
                 enableIntranodeVisibility = True
+                # GKE requires a node pool at creation time; the managed
+                # NodePool below replaces it, so remove the default pool.
                 initialNodeCount = 1
+                removeDefaultNodePool = True
                 ipAllocationPolicy = {
                     clusterSecondaryRangeName = "pods"
                     servicesSecondaryRangeName = "services"
@@ -147,6 +150,9 @@ _gke_items = [] if not (_service_account_email and _isServiceAccountReady) else 
         spec = _defaults | {
             forProvider = {
                 location = params.region
+                # Node counts are per zone. Pin the zones when requested,
+                # otherwise the pool spans all of the cluster's zones.
+                **({nodeLocations = params.nodes.zones} if params.nodes?.zones else {})
                 autoscaling = {
                     maxNodeCount = params.nodes.count
                     minNodeCount = params.nodes.count

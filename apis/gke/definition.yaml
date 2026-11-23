@@ -75,7 +75,13 @@ spec:
                       properties:
                         count:
                           type: integer
-                          description: Desired node count, from 1 to 100.
+                          description: Desired node count per zone, from 1 to 100. The cluster is regional, so the total node count is count multiplied by the number of zones (all zones of the region unless zones is set).
+                        zones:
+                          type: array
+                          description: Zones within the region to place nodes in, e.g. ["us-west2-a"]. Defaults to all zones of the region.
+                          minItems: 1
+                          items:
+                            type: string
                         instanceType:
                           type: string
                           description: instance types associated with the Node Group.
